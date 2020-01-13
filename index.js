@@ -4,21 +4,58 @@ const server = express();
 
 server.use(express.json());
 
+/**
+ * A variável `projects` pode ser `const` porque um `array`
+ * pode receber adições ou exclusões mesmo sendo uma constante.
+ */
 const projects = [];
 
-//list all projects
+/**
+ * Middleware que checa se o projeto existe
+ */
+function checkProjectExists(req, res, next) {
+  const { id } = req.params;
+  const project = projects.find(p => p.id == id);
+
+  if (!project) {
+    return res.status(400).json({ error: 'Project not found' });
+  }
+
+  return next();
+}
+
+/**
+ * Middleware que dá log no número de requisições
+ */
+function logRequests(req, res, next) {
+
+  console.count("Número de requisições");
+
+  return next();
+}
+
+server.use(logRequests);
+
+/**
+ * Retorna todos os projetos
+ */
 server.get('/projects', (req, res) => {
   return res.json(projects);
 });
 
-//list one specific project
+/**
+ * Retorna um projeto específico via id
+ */
 server.get('/projects/:id', (req, res) => {
   const { id } = req.params;
 
   return res.json(projects[id]);
 });
 
-//create a new project
+/**
+ * Request body: id, title
+ * Cadastra um novo projeto
+ */
 server.post('/projects', (req, res) => {
   const { id, title } = req.body;
 
@@ -33,8 +70,12 @@ server.post('/projects', (req, res) => {
   return res.json(projects);
 });
 
-//edit one project
-server.put('/projects/:id', (req, res) => {
+/**
+ * Route params: id
+ * Request body: title
+ * Altera o título do projeto com o id presente nos parâmetros da rota.
+ */
+server.put('/projects/:id', checkProjectExists, (req, res) => {
   const { id } = req.params;
   const { title } = req.body;
 
@@ -45,8 +86,11 @@ server.put('/projects/:id', (req, res) => {
   return res.json(projects);
 });
 
-//delete one project
-server.delete('/projects/:id', (req, res) => {
+/**
+ * Route params: id
+ * Deleta o projeto associado ao id presente nos parâmetros da rota.
+ */
+server.delete('/projects/:id', checkProjectExists, (req, res) => {
   const { id } = req.params;
   projects.splice(id, 1);
 
@@ -54,8 +98,11 @@ server.delete('/projects/:id', (req, res) => {
 
 });
 
-//criar nova tarefa no projeto
-server.post('/projects/:id/tasks', (req, res) => {
+/**
+ * Route params: id;
+ * Adiciona uma nova tarefa no projeto escolhido via id; 
+ */
+server.post('/projects/:id/tasks', checkProjectExists, (req, res) => {
   const { id } = req.params;
   const { tasks } = req.body;
 
@@ -63,7 +110,7 @@ server.post('/projects/:id/tasks', (req, res) => {
 
   project.tasks.push(tasks);
 
-  return res.json(project);
+  return res.json(projects);
 });
 
 
